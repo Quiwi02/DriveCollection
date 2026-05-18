@@ -1,0 +1,15 @@
+# Entornos locales / OS
+.DS_Store
+Thumbs.db
+*.local
+.vscode/
+.idea/
+
+# XAMPP / Servidor temporales
+*.log
+*.tmp
+tmp/
+
+# Archivos de configuración con contraseñas (si los hay en el futuro)
+config/database.local.php
+.env
