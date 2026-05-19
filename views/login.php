@@ -1,3 +1,33 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (isset($_SESSION['id_usuario'])) {
+    header("Location: dashboard.php");
+    exit();
+}
+
+$error = "";
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    require_once __DIR__ . "/../controller/AuthController.php";
+
+    $auth = new AuthController();
+    $usuario = trim($_POST['usuario'] ?? '');
+    $password = trim($_POST['password'] ?? '');
+
+    if (empty($usuario) || empty($password)) {
+        $error = "Por favor completa todos los campos.";
+    } else {
+        if ($auth->login($usuario, $password)) {
+            header("Location: dashboard.php");
+            exit();
+        } else {
+            $error = "Usuario o contraseña incorrectos.";
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -41,32 +71,32 @@
         <?php endif; ?>
 
         <!-- Form -->
-        <form id="login-form" method="POST" action="/EntreVentaCarros/controller/AuthController.php?action=login" novalidate>
+        <form id="login-form" method="POST" action="login.php" novalidate>
 
             <div class="form-group">
-                <label for="correo">Correo electrónico</label>
+                <label for="usuario">Nombre de Usuario</label>
                 <div class="input-wrap">
-                    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     <input
-                        type="email"
-                        id="correo"
-                        name="correo"
-                        placeholder="admin@drivecollection.com"
-                        value="<?= htmlspecialchars($_POST['correo'] ?? '') ?>"
+                        type="text"
+                        id="usuario"
+                        name="usuario"
+                        placeholder="Ej. Administrador"
+                        value="<?= htmlspecialchars($_POST['usuario'] ?? '') ?>"
                         required
-                        autocomplete="email"
+                        autocomplete="username"
                     >
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="clave">Contraseña</label>
+                <label for="password">Contraseña</label>
                 <div class="input-wrap">
                     <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                     <input
                         type="password"
-                        id="clave"
-                        name="clave"
+                        id="password"
+                        name="password"
                         placeholder="••••••••"
                         required
                         autocomplete="current-password"
@@ -85,27 +115,7 @@
     </div>
 </div>
 
-<script>
-    // Toggle visibilidad contraseña
-    const toggle = document.getElementById('toggle-pass');
-    const inputClave = document.getElementById('clave');
-
-    toggle.addEventListener('click', () => {
-        const isPass = inputClave.type === 'password';
-        inputClave.type = isPass ? 'text' : 'password';
-        toggle.setAttribute('aria-label', isPass ? 'Ocultar contraseña' : 'Mostrar contraseña');
-    });
-
-    // Validación básica cliente
-    document.getElementById('login-form').addEventListener('submit', function (e) {
-        const correo = document.getElementById('correo').value.trim();
-        const clave  = document.getElementById('clave').value.trim();
-        if (!correo || !clave) {
-            e.preventDefault();
-            alert('Por favor completa correo y contraseña.');
-        }
-    });
-</script>
+<script src="/EntreVentaCarros/assetes/js/login.js"></script>
 
 </body>
 </html>

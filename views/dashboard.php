@@ -1,4 +1,52 @@
+<?php
+session_start();
+if (!isset($_SESSION['id_usuario'])) {
+    header("Location: login.php");
+    exit();
+}
+
+require_once "../config/database.php";
+$db = getDB();
+
+// Consultas para las estadísticas
+$stats = [
+    'carros'       => (int) $db->query("SELECT COUNT(*) FROM vehiculos WHERE estado = 'disponible'")->fetchColumn(),
+    'reservas'     => (int) $db->query("SELECT COUNT(*) FROM reservas WHERE estado = 'activa'")->fetchColumn(),
+    'ventas_mes'   => (int) $db->query("SELECT COUNT(*) FROM ventas WHERE MONTH(fecha_venta) = MONTH(NOW()) AND YEAR(fecha_venta) = YEAR(NOW())")->fetchColumn(),
+    'asesores'     => (int) $db->query("SELECT COUNT(*) FROM usuarios WHERE rol = 'asesor' AND activo = 1")->fetchColumn(),
+    'cotizaciones' => (int) $db->query("SELECT COUNT(*) FROM solicitudes WHERE estado = 'pendiente'")->fetchColumn(),
+    'ingresos'     => (float) $db->query("SELECT COALESCE(SUM(monto), 0) FROM ventas")->fetchColumn(),
+];
+
+// Últimas ventas
+$stmtVentas = $db->prepare("
+    SELECT v.id_ventas, v.monto, v.metodo_pago, v.fecha_venta,
+           c.nombre AS cliente_nombre, c.apellido AS cliente_apellido,
+           ve.marca, ve.modelo
+    FROM ventas v
+    JOIN clientes c  ON c.id_clientes  = v.id_clientes
+    JOIN vehiculos ve ON ve.id_vehiculos = v.id_vehiculos
+    ORDER BY v.fecha_venta DESC
+    LIMIT 5
+");
+$stmtVentas->execute();
+$ultimasVentas = $stmtVentas->fetchAll();
+
+// Últimas solicitudes
+$stmtSolicitudes = $db->prepare("
+    SELECT s.id_solicitudes, s.nombre, s.correo, s.metodo_adquisicion,
+           s.estado, s.fecha_solicitud,
+           ve.marca, ve.modelo
+    FROM solicitudes s
+    JOIN vehiculos ve ON ve.id_vehiculos = s.id_vehiculos
+    ORDER BY s.fecha_solicitud DESC
+    LIMIT 5
+");
+$stmtSolicitudes->execute();
+$ultimasSolicitudes = $stmtSolicitudes->fetchAll();
+?>
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -30,44 +78,44 @@
     <nav class="sidebar-nav">
         <div class="nav-label">Principal</div>
 
-        <a href="/EntreVentaCarros/controller/DashboardController.php" class="nav-item active" id="nav-dashboard">
+        <a href="dashboard.php" class="nav-item active" id="nav-dashboard">
             <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
             Dashboard
         </a>
 
         <div class="nav-label">Gestión</div>
 
-        <a href="#" class="nav-item" id="nav-vehiculos">
+        <a href="vehiculos.php" class="nav-item" id="nav-vehiculos">
             <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.08 3.11H5.77L6.85 7zM19 17H5v-5h14v5z"/></svg>
             Vehículos
         </a>
 
-        <a href="#" class="nav-item" id="nav-clientes">
+        <a href="clientes.php" class="nav-item" id="nav-clientes">
             <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
             Clientes
         </a>
 
-        <a href="#" class="nav-item" id="nav-asesores">
+        <a href="asesores.php" class="nav-item" id="nav-asesores">
             <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             Asesores
         </a>
 
-        <a href="#" class="nav-item" id="nav-reservas">
+        <a href="reservas.php" class="nav-item" id="nav-reservas">
             <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
             Reservas
         </a>
 
-        <a href="#" class="nav-item" id="nav-ventas">
+        <a href="ventas.php" class="nav-item" id="nav-ventas">
             <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
             Ventas
         </a>
 
-        <a href="#" class="nav-item" id="nav-solicitudes">
+        <a href="solicitudes.php" class="nav-item" id="nav-solicitudes">
             <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
             Solicitudes
         </a>
 
-        <a href="#" class="nav-item" id="nav-asistencias">
+        <a href="asistencias.php" class="nav-item" id="nav-asistencias">
             <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             Asistencias
         </a>
@@ -82,7 +130,7 @@
                 <strong><?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?></strong>
                 <span><?= ucfirst($_SESSION['usuario_rol'] ?? 'admin') ?></span>
             </div>
-            <a href="/EntreVentaCarros/controller/AuthController.php?action=logout" class="btn-logout" title="Cerrar sesión">
+            <a href="logout.php" class="btn-logout" title="Cerrar sesión">
                 <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
             </a>
         </div>
@@ -252,19 +300,7 @@
 
 </main>
 
-<script>
-    // Reloj en vivo
-    function updateDate() {
-        const el = document.getElementById('live-date');
-        if (!el) return;
-        const now = new Date();
-        el.textContent = now.toLocaleDateString('es-CO', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        });
-    }
-    updateDate();
-    setInterval(updateDate, 60000);
-</script>
+<script src="/EntreVentaCarros/assetes/js/dashboard.js"></script>
 
 </body>
 </html>
