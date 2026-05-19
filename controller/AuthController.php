@@ -42,7 +42,7 @@ class AuthController {
                 $_SESSION['usuario_rol']    = $usuario['rol'];
                 $_SESSION['usuario_foto']   = $usuario['foto'] ?? '';
 
-                header('Location: /EntreVentaCarros/views/dashboard.php');
+                header('Location: /EntreVentaCarros/controller/DashboardController.php');
                 exit;
             } else {
                 $error = 'Correo o contraseña incorrectos.';
