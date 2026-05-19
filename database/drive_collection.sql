@@ -61,7 +61,7 @@ CREATE TABLE reservas (
     id_vehiculos INT NOT NULL,
     id_usuario INT DEFAULT NULL,
     fecha_reserva TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_limite TIMESTAMP NOT NULL,
+    fecha_limite DATETIME NOT NULL,
     estado ENUM('activa', 'expirada', 'convertida', 'cancelada') DEFAULT 'activa',
     observaciones TEXT DEFAULT NULL,
     FOREIGN KEY (id_clientes) REFERENCES clientes(id_clientes) ON DELETE CASCADE,
@@ -115,21 +115,8 @@ CREATE TABLE solicitudes (
     FOREIGN KEY (id_ventas) REFERENCES ventas(id_ventas) ON DELETE SET NULL
 );
 
-
 -- Nota: En un sistema real, la contraseña debe estar hasheada.
 INSERT INTO usuarios (nombre, correo, clave, rol) 
 VALUES ('Administrador', 'admin@drivecollection.com', 'admin123', 'admin');
-
--- Insertar algunos vehículos de ejemplo
-INSERT INTO vehiculos (marca, modelo, anio, precio_lista, color, kilometraje, transmision, combustible, descripcion, estado) VALUES
-('Toyota',   'Corolla Cross',  2024, 98500000.00,  'Blanco Perla',  0,     'CVT',        'Híbrido',  'SUV híbrida, techo panorámico, 7 airbags.', 'disponible'),
-('Mazda',    'CX-5',           2024, 115000000.00, 'Rojo Soul',     0,     'Automática', 'Gasolina', 'Turbo 2.5L, i-Activ AWD, pantalla 10.25".', 'disponible'),
-('BMW',      '320i',           2023, 195000000.00, 'Negro Zafiro',  12000, 'Automática', 'Gasolina', 'Sport Line, control de crucero adaptativo.', 'reservado');
-
--- Esto cambia el usuario a 'admin' y encripta la contraseña 'admin123'
-UPDATE usuarios SET 
-    nombre = 'admin', 
-    clave = '123' 
-WHERE id_usuario = 1;
 
 select * from usuarios;
