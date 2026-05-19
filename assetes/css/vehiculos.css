@@ -378,6 +378,13 @@ tr:last-child td { border-bottom: none; }
 }
 .alert-success svg { width: 18px; height: 18px; fill: currentColor; }
 
+.alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.15);
+}
+.alert-danger svg { width: 18px; height: 18px; fill: currentColor; }
+
 /* ── IMAGE MANAGER UI ────────────────────────────────────── */
 .upload-container {
     border: 2px dashed var(--border);

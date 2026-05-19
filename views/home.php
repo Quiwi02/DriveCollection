@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/../config/database.php';
 $db = getDB();
 
@@ -27,6 +28,7 @@ $asesores = $stmtAsesores->fetchAll();
 // Procesar formulario de cotización (POST)
 $mensaje = '';
 $msgTipo = '';
+$id_vehiculo_enviado = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_cotizacion'])) {
     $id_vehiculos       = (int) ($_POST['id_vehiculos'] ?? 0);
@@ -54,13 +56,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_cotizacion']))
         ]);
 
         if ($success) {
-            $mensaje = '¡Solicitud enviada! Nuestro equipo se pondrá en contacto contigo pronto.';
-            $msgTipo = 'success';
+            $_SESSION['cotizacion_enviada'] = true;
+            $_SESSION['id_vehiculo_enviado'] = $id_vehiculos;
+            header("Location: home.php");
+            exit();
         } else {
             $mensaje = 'Ocurrió un error al enviar. Intenta de nuevo.';
             $msgTipo = 'error';
         }
     }
+}
+
+// Consumir mensaje flash en GET si existe
+if (isset($_SESSION['cotizacion_enviada'])) {
+    $mensaje = '¡Solicitud enviada! Nuestro equipo se pondrá en contacto contigo pronto.';
+    $msgTipo = 'success';
+    $id_vehiculo_enviado = (int)($_SESSION['id_vehiculo_enviado'] ?? 0);
+    unset($_SESSION['cotizacion_enviada']);
+    unset($_SESSION['id_vehiculo_enviado']);
 }
 ?>
 <!DOCTYPE html>
@@ -413,12 +426,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_cotizacion']))
         </div>
         <div class="modal-body">
 
-            <!-- Imagen principal -->
-            <div class="galeria-principal">
-                <img id="galeria-img-principal" src="" alt="Vehículo">
-            </div>
-            <div class="galeria-thumbs" id="galeria-thumbs"></div>
-
             <!-- Mensaje solicitud -->
             <?php if (!empty($mensaje)): ?>
             <div class="alert-<?= $msgTipo ?>">
@@ -426,7 +433,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_cotizacion']))
             </div>
             <?php endif; ?>
 
-            <!-- Formulario de cotización -->
+            <?php if ($msgTipo !== 'success'): ?>
+            <!-- Imagen principal -->
+            <div class="galeria-principal">
+                <img id="galeria-img-principal" src="" alt="Vehículo">
+            </div>
+            <div class="galeria-thumbs" id="galeria-thumbs"></div>
+
+            <!-- Formulario de cotización (solo se muestra si no fue exitoso) -->
             <div class="form-title">📋 Solicitar Cotización</div>
 
             <form method="POST" action="" id="form-cotizacion">
@@ -467,6 +481,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_cotizacion']))
 
                 <button type="submit" name="enviar_cotizacion" class="btn-primary" style="width:100%">Enviar Solicitud</button>
             </form>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -486,10 +501,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enviar_cotizacion']))
 
 <script src="/EntreVentaCarros/assetes/js/home.js"></script>
 <script>
-    // Abrir modal automáticamente si hay mensaje de respuesta (POST recién enviado)
-    <?php if (!empty($mensaje) && !empty($_POST['id_vehiculos'])): ?>
+    // Abrir modal automáticamente si hay mensaje de respuesta (POST o redirección por éxito)
+    <?php 
+    $id_vehiculo_modal = $id_vehiculo_enviado > 0 ? $id_vehiculo_enviado : (int)($_POST['id_vehiculos'] ?? 0);
+    if (!empty($mensaje) && $id_vehiculo_modal > 0): 
+    ?>
     window.addEventListener('DOMContentLoaded', () => {
-        abrirModal(<?= (int)$_POST['id_vehiculos'] ?>, 'Cotización enviada', '');
+        abrirModal(<?= $id_vehiculo_modal ?>, 'Cotización enviada', '');
     });
     <?php endif; ?>
 </script>
